@@ -1,22 +1,34 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
+import { Gif, SearchGifsResponse } from '../interface/gifs.interface';
 
 @Injectable({
   providedIn: 'root'
 })
 export class GifsService {
 
-  private apiKey: string = "VIfy54u6L11waw2iPhstOnpQIGQxSEJd";
+  private apiKey      : string = "VIfy54u6L11waw2iPhstOnpQIGQxSEJd";
 
-  private _historial: string[] = [];
+  private servicioURL : string = "https://api.giphy.com/v1/gifs";
 
-  public resultados: any;
+  private _historial  : string[] = [];
+
+  public resultados   : Gif[] = [];
 
   get historial(){
     return [...this._historial]
   }
 
-  constructor( private http: HttpClient){}
+  constructor( private http: HttpClient){
+
+    this._historial = JSON.parse(localStorage.getItem("historial")!) || []
+
+    this.resultados = JSON.parse(localStorage.getItem("resultados")!) || []
+
+    // if(localStorage.getItem("historial")){
+    //   this._historial = JSON.parse(localStorage.getItem("historial")!)
+    // }
+  }
 
   buscarGifs(query: string){
 
@@ -27,14 +39,22 @@ export class GifsService {
         this._historial.unshift(query);
   
         this._historial= this._historial.splice(0, 10);
+
+        localStorage.setItem("historial",JSON.stringify(this._historial));
+
       }
 
-      this.http.get(`https://api.giphy.com/v1/gifs/search?api_key=arck18N6UfLEdTp56l5oXJ1iO5BseHAG&q=${query}&limit=10`)
-        .subscribe( (resp: any) => {
-            console.log(resp.data)
-            this.resultados = resp.data;
-        })
+      const params = new HttpParams()
+                    .set("api_key",this.apiKey)
+                    .set("q", query)
+                    .set("limit", "10");
 
+      this.http.get<SearchGifsResponse>(`${this.servicioURL}/search?`, {params})
+        .subscribe( (resp) => {
+            // console.log(resp.data)
+            this.resultados = resp.data;
+            localStorage.setItem("resultados",JSON.stringify(this.resultados))
+        })
 
   }
 }
